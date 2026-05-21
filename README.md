@@ -56,15 +56,17 @@ The only way this project can possibly work is to be super focused about what it
    - elevation lookup
    - custom tile or dataset hosting
 
-2. OpenFreeMap is not something you can install locally. This repo is a deploy script specifically made to set up clean Ubuntu servers or virtual machines. It uses [Fabric](https://www.fabfile.org/) and runs commands over SSH. With a single command it can set up a production-ready server, both for tile hosting and generation.
+2. OpenFreeMap can be deployed in two ways:
 
-   This repo is Docker-free on purpose. If someone wants to make a Docker-based version of this, I'm more than happy to link it here.
+   **SSH Deployment (original):** This repo includes a deploy script that sets up clean Ubuntu servers or virtual machines. It uses [Fabric](https://www.fabfile.org/) and runs commands over SSH. With a single command it can set up a production-ready server, both for tile hosting and generation.
+
+   **Docker Deployment:** Docker support is also available via `docker-compose`. See [Docker deployment docs](docs/docker_deployment.md) for details. Note that the HTTP host container requires `--privileged` mode for Btrfs image mounting.
 
 3. OpenFreeMap does not promise worry-free automatic updates for self-hosters. Only use the autoupdate version of http-host if you keep a close eye on this repo.
 
 ## Self hosting
 
-See [self hosting docs](docs/self_hosting.md).
+See [self hosting docs](docs/self_hosting.md) for SSH-based deployment, or [Docker deployment docs](docs/docker_deployment.md) for Docker-based deployment.
 
 ## What is the tech stack?
 
@@ -168,7 +170,6 @@ Contributors welcome!
 
 Smaller tasks:
 
-- Cloudflare worker for indexing the public buckets, instead of generating index files.
 - [styles] Some of the POI icons are missing.
 
 Bigger tasks:

@@ -1,0 +1,61 @@
+# =============================================================================
+# OpenFreeMap Docker Ignore
+# =============================================================================
+
+# Version control
+.git
+.github
+
+# Node.js
+node_modules
+
+# Python
+*.pyc
+__pycache__
+.venv
+venv
+*.egg-info
+
+# macOS
+.DS_Store
+
+# IDE
+.idea
+.vscode
+
+# Temp files
+tmp
+temp
+_temp
+
+# Root-level lock file (website has its own)
+/pnpm-lock.yaml
+
+# Deploy scripts
+deploy-*.sh
+
+# Large data files - never send to Docker context
+*.sqlite
+*.mbtiles
+*.pbf
+
+# Debug proxy module (not needed in containers)
+modules/debug_proxy
+
+# Docker env files
+docker/.env.example
+.env
+
+# Docs
+docs
+README.md
+LICENSE.md
+
+# Misc
+*.md
+!website/**/*.md
+biome.jsonc
+.ruff.toml
+.envrc
+lint.sh
+review-this-repo-and-try-to-add-docker-container.md

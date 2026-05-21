@@ -1,0 +1,54 @@
+# =============================================================================
+# OpenFreeMap Website Container (Astro Static Site)
+# =============================================================================
+# Multi-stage build: builds the Astro site with pnpm, then serves with 'serve'.
+# Wrangler and Cloudflare-specific files are excluded - those are for CF deployment only.
+#
+# Build: docker build -f docker/Dockerfile.website -t ofm-website .
+# Run:   docker run -p 4321:4321 ofm-website
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# Stage 1: Build the Astro site
+# ---------------------------------------------------------------------------
+FROM node:20-alpine AS builder
+
+# Enable corepack and activate pnpm at a pinned version
+RUN corepack enable && corepack prepare pnpm@9.9.0 --activate
+
+WORKDIR /app
+
+# Copy dependency manifests first for better layer caching
+COPY website/package.json website/pnpm-lock.yaml ./
+
+# Install dependencies (frozen lockfile ensures reproducible builds)
+# --ignore-scripts skips postinstall hooks that may need native deps (e.g. workerd)
+RUN pnpm install --frozen-lockfile --ignore-scripts
+
+# Copy the rest of the website source (excluding wrangler files via .dockerignore)
+COPY website/ ./
+
+# Remove wrangler config if it slipped through (it's for Cloudflare Pages only)
+RUN rm -f wrangler.jsonc wrangler.toml
+
+# Build the static site
+RUN pnpm build
+
+# ---------------------------------------------------------------------------
+# Stage 2: Serve the static files
+# ---------------------------------------------------------------------------
+FROM node:20-alpine
+
+# Install a lightweight static file server
+RUN npm install -g serve@14
+
+WORKDIR /app
+
+# Copy only the built output from the builder stage
+COPY --from=builder /app/dist ./dist
+
+EXPOSE 4321
+
+# Serve the static files on port 4321
+# -s enables single-page application mode (rewrites to index.html)
+CMD ["serve", "-s", "dist", "-l", "4321"]

@@ -1,0 +1,122 @@
+# =============================================================================
+# OpenFreeMap HTTP Host Container
+# =============================================================================
+# Downloads btrfs tile images, mounts them as loop devices, and serves
+# map tiles via nginx. Must run with --privileged for loop device access.
+#
+# Build: docker build -f docker/Dockerfile.http-host -t ofm-http-host .
+# Run:   docker run --privileged -p 80:80 -p 443:443 ofm-http-host
+# =============================================================================
+
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
+
+# ---------------------------------------------------------------------------
+# 1. Install system packages (single layer to minimize image size)
+# ---------------------------------------------------------------------------
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        # Python
+        python3 \
+        python3-venv \
+        python3-pip \
+        python3-dev \
+        # Build dependencies for pycurl
+        libcurl4-openssl-dev \
+        libssl-dev \
+        # Btrfs and archive tools
+        btrfs-progs \
+        aria2 \
+        pigz \
+        unpigz \
+        # Networking and certs
+        curl \
+        wget \
+        openssl \
+        rsync \
+        ca-certificates \
+        gnupg2 \
+        lsb-release \
+        # Cron
+        cron \
+    && rm -rf /var/lib/apt/lists/*
+
+# ---------------------------------------------------------------------------
+# 2. Install nginx from official nginx.org mainline repo
+# ---------------------------------------------------------------------------
+RUN curl -fsSL https://nginx.org/keys/nginx_signing.key \
+        | gpg --dearmor -o /etc/apt/keyrings/nginx.gpg \
+    && echo "deb [signed-by=/etc/apt/keyrings/nginx.gpg] http://nginx.org/packages/mainline/ubuntu jammy nginx" \
+        > /etc/apt/sources.list.d/nginx.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends nginx \
+    && rm -rf /var/lib/apt/lists/*
+
+# ---------------------------------------------------------------------------
+# 3. Install certbot
+# ---------------------------------------------------------------------------
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        certbot \
+        python3-certbot-dns-cloudflare \
+    && rm -rf /var/lib/apt/lists/*
+
+# ---------------------------------------------------------------------------
+# 4. Install rclone (latest stable)
+# ---------------------------------------------------------------------------
+RUN curl -fsSL https://rclone.org/install.sh | bash
+
+# ---------------------------------------------------------------------------
+# 5. Create directory structure
+# ---------------------------------------------------------------------------
+RUN mkdir -p \
+        /data/ofm/config \
+        /data/ofm/http_host/bin \
+        /data/ofm/http_host/runs \
+        /data/ofm/http_host/assets \
+        /data/ofm/http_host/logs \
+        /data/ofm/http_host/logs_nginx \
+        /data/nginx/config \
+        /data/nginx/logs \
+        /data/nginx/sites \
+        /data/nginx/acme-challenges \
+        /data/nginx/certs \
+        /mnt/ofm \
+        /etc/nginx/ssl \
+        /etc/apt/keyrings
+
+# ---------------------------------------------------------------------------
+# 6. Create Python virtual environment and install base packages
+# ---------------------------------------------------------------------------
+RUN python3 -m venv /data/ofm/venv \
+    && /data/ofm/venv/bin/pip install --no-cache-dir --upgrade pip \
+    && /data/ofm/venv/bin/pip install --no-cache-dir click pycurl requests
+
+# ---------------------------------------------------------------------------
+# 7. Copy nginx configuration files
+# ---------------------------------------------------------------------------
+COPY ssh_lib/assets/nginx/nginx.conf /etc/nginx/nginx.conf
+COPY ssh_lib/assets/nginx/mime.types /etc/nginx/mime.types
+COPY ssh_lib/assets/nginx/default_disable.conf /data/nginx/sites/default_disable.conf
+COPY ssh_lib/assets/nginx/cloudflare.conf /data/nginx/config/cloudflare.conf
+
+# ---------------------------------------------------------------------------
+# 8. Copy and install the http_host Python module
+# ---------------------------------------------------------------------------
+COPY modules/http_host/ /data/ofm/http_host/bin/
+RUN cd /data/ofm/http_host/bin \
+    && /data/ofm/venv/bin/pip install --no-cache-dir -e . --use-pep517
+
+# ---------------------------------------------------------------------------
+# 9. Copy entrypoint
+# ---------------------------------------------------------------------------
+COPY docker/docker-entrypoint-http-host.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
+# ---------------------------------------------------------------------------
+# 10. Expose ports and set entrypoint
+# ---------------------------------------------------------------------------
+EXPOSE 80 443
+
+ENTRYPOINT ["/docker-entrypoint.sh"]

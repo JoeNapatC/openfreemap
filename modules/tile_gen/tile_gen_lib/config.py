@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 from pathlib import Path
 
@@ -16,16 +17,25 @@ class Configuration:
 
     runs_dir = tile_gen_dir / 'runs'
 
-    if Path('/data/ofm').exists():
+    # Support OFM_CONFIG_DIR env var override for Docker compatibility
+    _config_dir_override = os.environ.get('OFM_CONFIG_DIR')
+    if _config_dir_override:
+        ofm_config_dir = Path(_config_dir_override)
+    elif Path('/data/ofm').exists():
         ofm_config_dir = Path('/data/ofm/config')
     else:
         repo_root = Path(__file__).parent.parent.parent.parent
         ofm_config_dir = repo_root / 'config'
 
-    ofm_config = json.loads((ofm_config_dir / 'config.json').read_text())
+    config_json_path = ofm_config_dir / 'config.json'
+    if config_json_path.exists():
+        ofm_config = json.loads(config_json_path.read_text())
+    else:
+        ofm_config = {}
 
     rclone_config = ofm_config_dir / 'rclone.conf'
     rclone_bin = subprocess.run(['which', 'rclone'], capture_output=True, text=True).stdout.strip()
 
 
 config = Configuration()
+

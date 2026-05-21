@@ -1,0 +1,95 @@
+# =============================================================================
+# OpenFreeMap - Docker Compose
+# =============================================================================
+#
+# Quick Start:
+#   1. cp docker/.env.example .env
+#   2. Edit .env with your domain and email
+#   3. docker compose up -d
+#
+# Services:
+#   http-host  - Downloads tile images, mounts btrfs, serves via nginx (ports 80/443)
+#   tile-gen   - Generates tiles with Planetiler (on-demand, use with 'docker compose run')
+#   website    - Astro static site (port 4321)
+#
+# Tile Generation (on-demand):
+#   docker compose --profile tile-gen run --rm tile-gen make-tiles monaco
+#   docker compose --profile tile-gen run --rm tile-gen make-tiles planet --upload
+#
+# =============================================================================
+
+version: '3.8'
+
+services:
+  # ---------------------------------------------------------------------------
+  # HTTP Host - Main tile serving container
+  # Runs privileged because it mounts btrfs images via loop devices
+  # ---------------------------------------------------------------------------
+  http-host:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.http-host
+    container_name: ofm-http-host
+    privileged: true
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - DOMAIN_DIRECT=${DOMAIN_DIRECT:-maps.example.com}
+      - DOMAIN_ROUNDROBIN=${DOMAIN_ROUNDROBIN:-}
+      - LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL:-}
+      - SKIP_PLANET=${SKIP_PLANET:-false}
+      - SELF_SIGNED_CERTS=${SELF_SIGNED_CERTS:-false}
+      - HTTP_HOST_LIST=${HTTP_HOST_LIST:-}
+      - TELEGRAM_TOKEN=${TELEGRAM_TOKEN:-}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
+    volumes:
+      - ofm-data:/data/ofm
+      - nginx-data:/data/nginx
+      - mnt-ofm:/mnt/ofm
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+
+  # ---------------------------------------------------------------------------
+  # Tile Generator - On-demand tile generation with Planetiler
+  # Only starts when explicitly invoked with --profile tile-gen
+  # ---------------------------------------------------------------------------
+  tile-gen:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.tile-gen
+    container_name: ofm-tile-gen
+    privileged: true
+    profiles:
+      - tile-gen
+    environment:
+      - DOMAIN_DIRECT=${DOMAIN_DIRECT:-maps.example.com}
+      - SKIP_PLANET=${SKIP_PLANET:-false}
+      - SELF_SIGNED_CERTS=${SELF_SIGNED_CERTS:-false}
+      - TELEGRAM_TOKEN=${TELEGRAM_TOKEN:-}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
+    volumes:
+      - ofm-data:/data/ofm
+      - ./config/rclone.conf:/data/ofm/config/rclone.conf:ro
+
+  # ---------------------------------------------------------------------------
+  # Website - Astro static site
+  # ---------------------------------------------------------------------------
+  website:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.website
+    container_name: ofm-website
+    restart: unless-stopped
+    ports:
+      - "4321:4321"
+
+volumes:
+  ofm-data:
+  nginx-data:
+  mnt-ofm:

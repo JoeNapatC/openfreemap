@@ -1,6 +1,25 @@
 # dev setup
 
-### macOS
+### Docker (recommended for quick start)
+
+The quickest way to get started is with Docker:
+
+```bash
+# Copy the example env file
+cp docker/.env.example .env
+
+# Edit .env — set SKIP_PLANET=true and SELF_SIGNED_CERTS=true for dev
+
+# Start just the HTTP host
+docker compose up http-host
+
+# Or start the website for development
+docker compose up website
+```
+
+See [Docker deployment docs](docker_deployment.md) for full details.
+
+### macOS (OrbStack VM)
 
 On macOS, I recommend [OrbStack](https://orbstack.dev/).
 
