@@ -78,7 +78,7 @@ nginx
 # 5. Run initial sync (force flag ensures it runs immediately)
 # ---------------------------------------------------------------------------
 echo "[entrypoint] Running initial sync (this may take a while on first run)..."
-/data/ofm/venv/bin/python -u /data/ofm/http_host/bin/http_host.py sync --force || {
+/opt/ofm/venv/bin/python -u /opt/ofm/http_host/bin/http_host.py sync --force || {
     echo "[entrypoint] WARNING: Initial sync failed (may succeed on retry via cron)"
 }
 
@@ -88,7 +88,7 @@ echo "[entrypoint] Running initial sync (this may take a while on first run)..."
 echo "[entrypoint] Setting up cron job for periodic sync..."
 cat > /etc/cron.d/ofm_http_host <<'CRON'
 # OpenFreeMap HTTP Host - sync every minute
-* * * * * root /data/ofm/venv/bin/python -u /data/ofm/http_host/bin/http_host.py sync >> /data/ofm/http_host/logs/sync.log 2>&1
+* * * * * root /opt/ofm/venv/bin/python -u /opt/ofm/http_host/bin/http_host.py sync >> /data/ofm/http_host/logs/sync.log 2>&1
 CRON
 chmod 0644 /etc/cron.d/ofm_http_host
 

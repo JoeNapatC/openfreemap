@@ -89,9 +89,9 @@ RUN mkdir -p \
 # ---------------------------------------------------------------------------
 # 6. Create Python virtual environment and install base packages
 # ---------------------------------------------------------------------------
-RUN python3 -m venv /data/ofm/venv \
-    && /data/ofm/venv/bin/pip install --no-cache-dir --upgrade pip \
-    && /data/ofm/venv/bin/pip install --no-cache-dir click pycurl requests
+RUN python3 -m venv /opt/ofm/venv \
+    && /opt/ofm/venv/bin/pip install --no-cache-dir --upgrade pip \
+    && /opt/ofm/venv/bin/pip install --no-cache-dir click pycurl requests
 
 # ---------------------------------------------------------------------------
 # 7. Copy nginx configuration files
@@ -104,13 +104,14 @@ COPY ssh_lib/assets/nginx/cloudflare.conf /data/nginx/config/cloudflare.conf
 # ---------------------------------------------------------------------------
 # 8. Copy and install the http_host Python module
 # ---------------------------------------------------------------------------
-COPY modules/http_host/ /data/ofm/http_host/bin/
+COPY modules/http_host/ /opt/ofm/http_host/bin/
 # Resolve symlink: http_host_lib/shared.py is a symlink to tile_gen_lib/shared.py
 # Docker COPY preserves symlinks which breaks them inside the isolated container.
-COPY modules/tile_gen/tile_gen_lib/shared.py /data/ofm/http_host/bin/http_host_lib/shared.py
+RUN rm -f /opt/ofm/http_host/bin/http_host_lib/shared.py
+COPY modules/tile_gen/tile_gen_lib/shared.py /opt/ofm/http_host/bin/http_host_lib/shared.py
 
-RUN cd /data/ofm/http_host/bin \
-    && /data/ofm/venv/bin/pip install --no-cache-dir -e . --use-pep517
+RUN cd /opt/ofm/http_host/bin \
+    && /opt/ofm/venv/bin/pip install --no-cache-dir -e . --use-pep517
 
 # ---------------------------------------------------------------------------
 # 9. Copy entrypoint

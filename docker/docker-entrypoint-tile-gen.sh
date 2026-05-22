@@ -68,4 +68,4 @@ fi
 echo "[entrypoint] Running: tile_gen.py $*"
 echo "========================================"
 
-exec /data/ofm/venv/bin/python -u /data/ofm/tile_gen/bin/tile_gen.py "$@"
+exec /opt/ofm/venv/bin/python -u /opt/ofm/tile_gen/bin/tile_gen.py "$@"

@@ -9,7 +9,7 @@ class Configuration:
 
     tile_gen_dir = Path('/data/ofm/tile_gen')
 
-    tile_gen_bin = tile_gen_dir / 'bin'
+    tile_gen_bin = Path(__file__).parent.parent
     tile_gen_scripts_dir = tile_gen_bin / 'scripts'
 
     planetiler_bin = tile_gen_dir / 'planetiler'

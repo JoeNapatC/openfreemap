@@ -9,7 +9,7 @@ class Configuration:
 
     http_host_dir = Path('/data/ofm/http_host')
 
-    http_host_bin = http_host_dir / 'bin'
+    http_host_bin = Path(__file__).parent.parent
     http_host_scripts_dir = http_host_bin / 'scripts'
 
     runs_dir = http_host_dir / 'runs'

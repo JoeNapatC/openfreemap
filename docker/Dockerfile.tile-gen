@@ -78,16 +78,16 @@ RUN mkdir -p \
 # ---------------------------------------------------------------------------
 # 5. Create Python virtual environment and install base packages
 # ---------------------------------------------------------------------------
-RUN python3 -m venv /data/ofm/venv \
-    && /data/ofm/venv/bin/pip install --no-cache-dir --upgrade pip \
-    && /data/ofm/venv/bin/pip install --no-cache-dir click pycurl requests
+RUN python3 -m venv /opt/ofm/venv \
+    && /opt/ofm/venv/bin/pip install --no-cache-dir --upgrade pip \
+    && /opt/ofm/venv/bin/pip install --no-cache-dir click pycurl requests
 
 # ---------------------------------------------------------------------------
 # 6. Copy and install the tile_gen Python module
 # ---------------------------------------------------------------------------
-COPY modules/tile_gen/ /data/ofm/tile_gen/bin/
-RUN cd /data/ofm/tile_gen/bin \
-    && /data/ofm/venv/bin/pip install --no-cache-dir -e . --use-pep517
+COPY modules/tile_gen/ /opt/ofm/tile_gen/bin/
+RUN cd /opt/ofm/tile_gen/bin \
+    && /opt/ofm/venv/bin/pip install --no-cache-dir -e . --use-pep517
 
 # ---------------------------------------------------------------------------
 # 7. Copy entrypoint

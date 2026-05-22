@@ -92,9 +92,10 @@ We verified the entire Docker implementation by running comprehensive build and 
 | Multi-arch build stability | ✅ PASS | Built on Apple Silicon/ARM64. Standardized dynamic `JAVA_HOME` configuration to work on both amd64 and arm64 automatically. |
 
 > [!NOTE]
-> During testing, we caught two minor build-time issues that were successfully resolved:
+> During testing, we caught three minor build-time/runtime issues that were successfully resolved:
 > 1. The Ubuntu package list included `unpigz` which is not a standalone package. We removed it because it's already provided by the `pigz` package.
 > 2. The `rclone` official installer script required `unzip` which is not pre-installed in minimal Ubuntu base images. We added the `unzip` package to the system requirements of both Dockerfiles.
+> 3. **Volume Masking & Symlink Resolution (Architectural Fix)**: In earlier runs, mounting `ofm-data:/data/ofm` over the containers masked the newly built code at `/data/ofm/http_host/bin` and the python virtualenv at `/data/ofm/venv` with stale volume data (carrying broken host-relative symlinks for `shared.py` and missing modules). We structurally resolved this by relocating code installation and python virtualenvs from `/data/ofm` to `/opt/ofm` in both Dockerfiles, while keeping config and data persistence inside `/data/ofm` (fully preserving dynamic path resolutions via relative python imports). This eliminates any risk of volume-masking or stale code deployment under Coolify.
 
 ---
 
