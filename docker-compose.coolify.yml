@@ -41,9 +41,10 @@ services:
       - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
       - IS_DOCKER=true
     volumes:
-      - /ofm-data:/data/ofm
-      - /nginx-data:/data/nginx
-      - /mnt-ofm:/mnt/ofm
+      # Map container paths to explicit directories on your host:
+      - /opt/openfreemap/data/ofm:/data/ofm
+      - /opt/openfreemap/data/nginx:/data/nginx
+      - /opt/openfreemap/mnt/ofm:/mnt/ofm
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/"]
       interval: 30s
