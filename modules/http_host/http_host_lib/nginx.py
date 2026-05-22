@@ -7,6 +7,16 @@ from http_host_lib.config import config
 from http_host_lib.utils import python_venv_executable
 
 
+def reload_nginx():
+    subprocess.run(['nginx', '-t'], check=True)
+    if shutil.which('systemctl'):
+        subprocess.run(['systemctl', 'reload', 'nginx'], check=True)
+    elif shutil.which('service'):
+        subprocess.run(['service', 'nginx', 'reload'], check=True)
+    else:
+        subprocess.run(['nginx', '-s', 'reload'], check=True)
+
+
 def write_nginx_config():
     print('Writing nginx config')
 
@@ -56,8 +66,7 @@ def write_nginx_config():
             domain=domain_direct,
         )
 
-        subprocess.run(['nginx', '-t'], check=True)
-        subprocess.run(['systemctl', 'reload', 'nginx'], check=True)
+        reload_nginx()
 
         if not self_signed_certs:
             subprocess.run(
@@ -73,7 +82,7 @@ def write_nginx_config():
                     '--cert-name=ofm_direct',
                     # '--staging',
                     '--deploy-hook',
-                    'nginx -t && service nginx reload',
+                    'nginx -t && (nginx -s reload || service nginx reload || systemctl reload nginx)',
                     '-d',
                     domain_direct,
                 ],
@@ -91,8 +100,7 @@ def write_nginx_config():
             direct_cert.symlink_to(etc_cert)
             direct_key.symlink_to(etc_key)
 
-    subprocess.run(['nginx', '-t'], check=True)
-    subprocess.run(['systemctl', 'reload', 'nginx'], check=True)
+    reload_nginx()
 
     curl_text_lines = sorted(curl_text_mix.splitlines())
     if config.ofm_config.get('skip_planet'):
