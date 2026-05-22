@@ -50,18 +50,18 @@ services:
       retries: 3
       start_period: 120s
 
-  # ---------------------------------------------------------------------------
-  # Website - Astro static site
-  # ---------------------------------------------------------------------------
-  website:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.website
-    container_name: ofm-website
-    restart: unless-stopped
-    # Expose the internal port to Coolify's reverse proxy
-    expose:
-      - "4321"
+  # # ---------------------------------------------------------------------------
+  # # Website - Astro static site
+  # # ---------------------------------------------------------------------------
+  # website:
+  #   build:
+  #     context: .
+  #     dockerfile: docker/Dockerfile.website
+  #   container_name: ofm-website
+  #   restart: unless-stopped
+  #   # Expose the internal port to Coolify's reverse proxy
+  #   expose:
+  #     - "4321"
 
 volumes:
   ofm-data:

@@ -105,6 +105,10 @@ COPY ssh_lib/assets/nginx/cloudflare.conf /data/nginx/config/cloudflare.conf
 # 8. Copy and install the http_host Python module
 # ---------------------------------------------------------------------------
 COPY modules/http_host/ /data/ofm/http_host/bin/
+# Resolve symlink: http_host_lib/shared.py is a symlink to tile_gen_lib/shared.py
+# Docker COPY preserves symlinks which breaks them inside the isolated container.
+COPY modules/tile_gen/tile_gen_lib/shared.py /data/ofm/http_host/bin/http_host_lib/shared.py
+
 RUN cd /data/ofm/http_host/bin \
     && /data/ofm/venv/bin/pip install --no-cache-dir -e . --use-pep517
 
