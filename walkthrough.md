@@ -27,6 +27,7 @@ Two major changes were made to the OpenFreeMap repository:
 |------|---------|
 | [.dockerignore](file:///Users/napatc/ARV/Aerial/Maps-Offine-Dev/.dockerignore) | Excludes .git, node_modules, *.pyc, large data files from build context |
 | [docker-compose.yml](file:///Users/napatc/ARV/Aerial/Maps-Offine-Dev/docker-compose.yml) | 3 services: http-host, tile-gen (profile-gated), website |
+| [docker-compose.coolify.yml](file:///Users/napatc/ARV/Aerial/Maps-Offine-Dev/docker-compose.coolify.yml) | **NEW** — Optimized Docker Compose stack specifically for Coolify hosting (Traefik compatibility) |
 | [docker/Dockerfile.http-host](file:///Users/napatc/ARV/Aerial/Maps-Offine-Dev/docker/Dockerfile.http-host) | Ubuntu 22.04, nginx, Python, btrfs-progs, certbot, rclone |
 | [docker/docker-entrypoint-http-host.sh](file:///Users/napatc/ARV/Aerial/Maps-Offine-Dev/docker/docker-entrypoint-http-host.sh) | Generates config.json, SSL certs, runs sync, starts nginx as PID 1 |
 | [docker/Dockerfile.tile-gen](file:///Users/napatc/ARV/Aerial/Maps-Offine-Dev/docker/Dockerfile.tile-gen) | Ubuntu 22.04, Java 24 (Temurin), Python, btrfs-progs |
@@ -67,25 +68,33 @@ Two major changes were made to the OpenFreeMap repository:
 
 | File | Change |
 |------|--------|
-| [README.md](file:///Users/napatc/ARV/Aerial/Maps-Offine-Dev/README.md) | Added Docker deployment option in limitations section; updated self-hosting link |
+| [README.md](file:///Users/napatc/ARV/Aerial/Maps-Offine-Dev/README.md) | Added Docker and Coolify deployment references; updated self-hosting guides |
 | [docs/docker_deployment.md](file:///Users/napatc/ARV/Aerial/Maps-Offine-Dev/docs/docker_deployment.md) | **NEW** — Full Docker deployment guide with quick start, config reference, troubleshooting |
+| [docs/coolify_deployment.md](file:///Users/napatc/ARV/Aerial/Maps-Offine-Dev/docs/coolify_deployment.md) | **NEW** — Dedicated Coolify hosting guide covering Traefik reverse proxy integration, volume configurations, and FQDN setups |
 | [docs/dev_setup.md](file:///Users/napatc/ARV/Aerial/Maps-Offine-Dev/docs/dev_setup.md) | Added Docker dev setup option |
 
 ---
 
 ## Verification Results
 
-| Check | Result |
-|-------|--------|
-| `modules/debug_proxy/` deleted | ✅ PASS |
-| No stale `debug_proxy` references in code | ✅ PASS |
-| All 8 Docker files exist | ✅ PASS |
-| Documentation files created | ✅ PASS |
-| README updated with Docker info | ✅ PASS |
-| Config.py files have `OFM_CONFIG_DIR` override | ✅ PASS |
-| No wrangler references in Python/Shell code | ✅ PASS |
-| All Dockerfiles have valid structure | ✅ PASS |
-| docker-compose.yml has all required services | ✅ PASS |
+We verified the entire Docker implementation by running comprehensive build and runtime testing directly within a Docker/Colima container environment:
+
+| Check | Result | Details / Output |
+|-------|--------|------------------|
+| `modules/debug_proxy/` deleted | ✅ PASS | Entire worker directory removed. |
+| No stale `debug_proxy` references | ✅ PASS | Checked via codebase grep search. |
+| Configuration overrides | ✅ PASS | `OFM_CONFIG_DIR` support tested in `config.py`. |
+| docker-compose.yml config | ✅ PASS | Validated using `docker-compose config` command. |
+| **Website Container Build** | ✅ PASS | Built Astro static site in Alpine. 0 errors, 0 warnings. |
+| **HTTP Host Container Build** | ✅ PASS | Built Ubuntu image with nginx-mainline + certbot + rclone. |
+| **Tile Gen Container Build** | ✅ PASS | Built on-demand image with Java 24 JDK + Planetiler. |
+| **Website Container Run** | ✅ PASS | Container started and successfully served traffic on `http://localhost:4321` (Verified 200 OK index.html). |
+| Multi-arch build stability | ✅ PASS | Built on Apple Silicon/ARM64. Standardized dynamic `JAVA_HOME` configuration to work on both amd64 and arm64 automatically. |
+
+> [!NOTE]
+> During testing, we caught two minor build-time issues that were successfully resolved:
+> 1. The Ubuntu package list included `unpigz` which is not a standalone package. We removed it because it's already provided by the `pigz` package.
+> 2. The `rclone` official installer script required `unzip` which is not pre-installed in minimal Ubuntu base images. We added the `unzip` package to the system requirements of both Dockerfiles.
 
 ---
 

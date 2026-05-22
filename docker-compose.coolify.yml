@@ -1,0 +1,67 @@
+# =============================================================================
+# OpenFreeMap - Docker Compose for Coolify
+# =============================================================================
+#
+# Optimized for self-hosting with Coolify (using internal Traefik routing).
+# Host port mappings are removed so that Traefik handles external routing
+# and SSL certificates dynamically under custom FQDN domains.
+#
+# Usage:
+#   1. Set Build Pack to "Docker Compose" in Coolify.
+#   2. Point "Docker Compose Location" to: ./docker-compose.coolify.yml
+#   3. Assign FQDNs for 'http-host' (e.g., https://maps.yourdomain.com) and
+#      'website' (e.g., https://yourdomain.com) in Coolify.
+#
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # HTTP Host - Main tile serving container
+  # Runs privileged because it mounts btrfs images via loop devices
+  # ---------------------------------------------------------------------------
+  http-host:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.http-host
+    container_name: ofm-http-host
+    privileged: true
+    restart: unless-stopped
+    # Expose the internal port to Coolify's reverse proxy
+    expose:
+      - "80"
+    environment:
+      - DOMAIN_DIRECT=${DOMAIN_DIRECT:-maps.example.com}
+      - DOMAIN_ROUNDROBIN=${DOMAIN_ROUNDROBIN:-}
+      - SKIP_PLANET=${SKIP_PLANET:-false}
+      - SELF_SIGNED_CERTS=false # Coolify/Traefik terminates SSL at the host level
+      - HTTP_HOST_LIST=${HTTP_HOST_LIST:-}
+      - TELEGRAM_TOKEN=${TELEGRAM_TOKEN:-}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
+    volumes:
+      - ofm-data:/data/ofm
+      - nginx-data:/data/nginx
+      - mnt-ofm:/mnt/ofm
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+
+  # ---------------------------------------------------------------------------
+  # Website - Astro static site
+  # ---------------------------------------------------------------------------
+  website:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.website
+    container_name: ofm-website
+    restart: unless-stopped
+    # Expose the internal port to Coolify's reverse proxy
+    expose:
+      - "4321"
+
+volumes:
+  ofm-data:
+  nginx-data:
+  mnt-ofm:

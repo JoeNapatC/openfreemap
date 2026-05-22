@@ -67,6 +67,7 @@ The only way this project can possibly work is to be super focused about what it
 ## Self hosting
 
 See [self hosting docs](docs/self_hosting.md) for SSH-based deployment, or [Docker deployment docs](docs/docker_deployment.md) for Docker-based deployment.
+For hosting with **Coolify**, see the [Coolify deployment docs](docs/coolify_deployment.md) for the specialized configuration.
 
 ### Docker Quick Start
 

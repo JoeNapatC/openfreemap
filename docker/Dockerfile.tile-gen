@@ -33,7 +33,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         btrfs-progs \
         aria2 \
         pigz \
-        unpigz \
+        unzip \
         # Networking and system utilities
         curl \
         wget \
@@ -54,9 +54,10 @@ RUN curl -fsSL https://packages.adoptium.net/artifactory/api/gpg/key/public \
         > /etc/apt/sources.list.d/adoptium.list \
     && apt-get update \
     && apt-get install -y --no-install-recommends temurin-24-jdk \
+    && ln -s /usr/lib/jvm/temurin-24-jdk-* /usr/lib/jvm/temurin-24-jdk \
     && rm -rf /var/lib/apt/lists/*
 
-ENV JAVA_HOME=/usr/lib/jvm/temurin-24-jdk-amd64
+ENV JAVA_HOME=/usr/lib/jvm/temurin-24-jdk
 ENV PATH="${JAVA_HOME}/bin:${PATH}"
 
 # ---------------------------------------------------------------------------

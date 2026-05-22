@@ -30,7 +30,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         btrfs-progs \
         aria2 \
         pigz \
-        unpigz \
+        unzip \
         # Networking and certs
         curl \
         wget \
