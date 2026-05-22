@@ -1,3 +1,4 @@
+import os
 import shutil
 import subprocess
 import sys
@@ -34,7 +35,7 @@ def write_nginx_config():
         file.unlink()
 
     # Remove default_disable.conf in Docker container environments to allow direct IP-based access
-    if Path('/.dockerenv').exists():
+    if Path('/.dockerenv').exists() or os.environ.get('IS_DOCKER') == 'true' or Path('/run/secrets/kubernetes.io').exists() or Path('/.dockerinit').exists():
         default_disable = Path('/data/nginx/sites/default_disable.conf')
         if default_disable.exists():
             default_disable.unlink()

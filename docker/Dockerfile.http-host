@@ -13,6 +13,7 @@ FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND=noninteractive
 ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8
+ENV IS_DOCKER=true
 
 # ---------------------------------------------------------------------------
 # 1. Install system packages (single layer to minimize image size)
