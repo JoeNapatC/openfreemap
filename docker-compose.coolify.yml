@@ -29,6 +29,8 @@ services:
     # Expose the internal port to Coolify's reverse proxy
     expose:
       - "80"
+    ports:
+      - "8085:80" # Optional: Expose port for direct access (e.g., http://localhost:8085)
     environment:
       - DOMAIN_DIRECT=${DOMAIN_DIRECT:-maps.example.com}
       - DOMAIN_ROUNDROBIN=${DOMAIN_ROUNDROBIN:-}
