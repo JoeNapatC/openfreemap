@@ -68,6 +68,18 @@ The only way this project can possibly work is to be super focused about what it
 
 See [self hosting docs](docs/self_hosting.md) for SSH-based deployment, or [Docker deployment docs](docs/docker_deployment.md) for Docker-based deployment.
 
+### Docker Quick Start
+
+```bash
+git clone https://github.com/hyperknot/openfreemap
+cd openfreemap
+cp .env.example .env
+# Edit .env — set DOMAIN_DIRECT, LETSENCRYPT_EMAIL, SKIP_PLANET=true for testing
+docker compose up -d
+```
+
+See the full [Docker deployment guide](docs/docker_deployment.md) for details.
+
 ## What is the tech stack?
 
 There is no tile server running; only Btrfs partition images with 300 million hard-linked files. This was my idea; I haven't read about anyone else doing this in production, but it works really well.
@@ -86,11 +98,15 @@ I run some [benchmarks](docs/benchmark/README.md) on a Hetzner server, the aim w
 
 ## Code structure
 
-The project has the following parts
+The project has the following parts:
 
-#### deploy server - ssh_lib and init-server.py
+#### Docker deployment - docker/
 
-This sets up everything on a clean Ubuntu server. You run it locally and it sets up the server via SSH.
+Docker support for all major components. Includes Dockerfiles for HTTP host, tile generation, and the website, plus a `docker-compose.yml` for orchestration. See [Docker deployment docs](docs/docker_deployment.md).
+
+#### SSH deploy server - ssh_lib and init-server.py
+
+The original deployment method. Sets up everything on a clean Ubuntu server. You run it locally and it sets up the server via SSH using [Fabric](https://www.fabfile.org/).
 
 #### HTTP host - modules/http_host
 
@@ -185,6 +201,12 @@ Future:
 See [dev setup docs](docs/dev_setup.md).
 
 ## Changelog
+
+##### v1.0
+
+Added Docker support with `docker-compose.yml`, Dockerfiles for HTTP host, tile generation, and website.
+Removed the debug proxy (Cloudflare Worker) module.
+Added `OFM_CONFIG_DIR` environment variable override for flexible config path in containers.
 
 ##### v0.9
 
