@@ -33,6 +33,12 @@ def write_nginx_config():
     for file in Path('/data/nginx/sites').glob('ofm_*.conf'):
         file.unlink()
 
+    # Remove default_disable.conf in Docker container environments to allow direct IP-based access
+    if Path('/.dockerenv').exists():
+        default_disable = Path('/data/nginx/sites/default_disable.conf')
+        if default_disable.exists():
+            default_disable.unlink()
+
     for file in Path('/data/nginx/certs').glob('ofm_*'):
         file.unlink()
 
