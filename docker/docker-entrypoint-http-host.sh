@@ -10,6 +10,21 @@
 
 set -e
 
+# Ensure directory structure exists in case of empty volume mounts or host bind-mounts
+mkdir -p \
+    /data/ofm/config \
+    /data/ofm/http_host/bin \
+    /data/ofm/http_host/runs \
+    /data/ofm/http_host/assets \
+    /data/ofm/http_host/logs \
+    /data/ofm/http_host/logs_nginx \
+    /data/nginx/config \
+    /data/nginx/logs \
+    /data/nginx/sites \
+    /data/nginx/acme-challenges \
+    /data/nginx/certs \
+    /mnt/ofm
+
 echo "========================================"
 echo "  OpenFreeMap HTTP Host - Starting Up"
 echo "========================================"

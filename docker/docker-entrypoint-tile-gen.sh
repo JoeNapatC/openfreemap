@@ -16,6 +16,9 @@
 
 set -e
 
+# Ensure directory structure exists in case of empty volume mounts or host bind-mounts
+mkdir -p /data/ofm/config
+
 echo "========================================"
 echo "  OpenFreeMap Tile Gen - Starting Up"
 echo "========================================"
