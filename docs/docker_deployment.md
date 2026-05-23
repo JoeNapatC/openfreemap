@@ -34,7 +34,12 @@ Edit `.env` and set:
 
 ### 2. Start the HTTP Host
 
+You can pull the pre-compiled images directly from the GitHub Container Registry (`ghcr.io/joenapatc/openfreemap`) before starting:
+
 ```bash
+# Pull the pre-built production images from GHCR
+docker compose pull
+
 # Start with just the HTTP host (most common use case)
 docker compose up -d http-host
 ```
@@ -153,10 +158,17 @@ access-control-allow-origin: *
 
 ## Updating
 
-To update to a newer version:
+To update to the latest pre-compiled images from GHCR:
 
 ```bash
 git pull
+docker compose pull
+docker compose up -d
+```
+
+If you are customizing the source code locally and want to rebuild:
+
+```bash
 docker compose build
 docker compose up -d
 ```

@@ -4,6 +4,7 @@
 
 [![Docker Support](https://img.shields.io/badge/Docker-Enabled-blue.svg?logo=docker&logoColor=white)](docs/docker_deployment.md)
 [![Coolify Support](https://img.shields.io/badge/Coolify-Supported-purple.svg)](docs/coolify_deployment.md)
+[![GHCR Build](https://github.com/JoeNapatC/openfreemap/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/JoeNapatC/openfreemap/actions/workflows/docker-publish.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.md)
 
 Welcome to the customized fork of **OpenFreeMap** (`JoeNapatC/openfreemap`). This repository provides a production-grade, fully containerized, and local-development-friendly map stack optimized for custom hosting environments and offline map deployment.
@@ -60,13 +61,20 @@ cp docker/.env.example .env
 
 ### Run Services
 
+You can deploy immediately using pre-compiled images from the GitHub Container Registry (`ghcr.io`) without building them locally:
+
 ```bash
-# Start the HTTP Host (serves map tiles)
+# 1. Pull the pre-built images from GHCR
+docker compose pull
+
+# 2. Start the HTTP Host (serves map tiles)
 docker compose up -d http-host
 
 # (Optional) Start the Astro Website
 docker compose up -d website
 ```
+
+*(Note: If you want to modify the source code locally, you can compile custom images by running `docker compose up -d --build` instead).*
 
 The HTTP Host container will start, download the tile data, mount the Btrfs images, and configure Nginx automatically. Follow the progress via:
 ```bash
@@ -111,6 +119,18 @@ For detailed, step-by-step instructions, see the [Coolify Deployment Guide](docs
 ├── docker-compose.yml           # Core Docker Compose orchestration file
 └── docker-compose.coolify.yml   # Coolify / Traefik optimized Compose file
 ```
+
+---
+
+## 🤖 Automated CI/CD (GitHub Actions)
+
+This repository includes a professional GitHub Actions workflow ([.github/workflows/docker-publish.yml](.github/workflows/docker-publish.yml)) that automates the building and publishing of all three services.
+
+### How It Works:
+1. **Trigger**: Every push to the `main` branch or release tag (e.g., `v1.0.0`) automatically starts the pipeline.
+2. **Parallel Matrix Build**: GitHub builds the three Docker files (`http-host`, `tile-gen`, and `website`) in parallel, yielding ultra-fast compile times.
+3. **Advanced Layer Caching**: Employs GitHub Actions native caching (`gha`) to cache Docker layer builds dynamically, reducing consecutive build times to seconds.
+4. **Publishing**: Pushes the resulting images to GitHub Container Registry (`ghcr.io/joenapatc/openfreemap/...`) tagged with `latest`, release tag, and the git commit `sha-`.
 
 ---
 

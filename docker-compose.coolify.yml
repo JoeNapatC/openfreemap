@@ -20,6 +20,7 @@ services:
   # Runs privileged because it mounts btrfs images via loop devices
   # ---------------------------------------------------------------------------
   http-host:
+    image: ghcr.io/joenapatc/openfreemap/http-host:latest
     build:
       context: .
       dockerfile: docker/Dockerfile.http-host
@@ -42,30 +43,29 @@ services:
       - IS_DOCKER=true
     volumes:
       # Map container paths to explicit directories on your host:
-      - /opt/openfreemap/data/ofm:/data/ofm
-      - /opt/openfreemap/data/nginx:/data/nginx
+      - ofm-data:/data/ofm
+      - nginx-data:/data/nginx
       - /opt/openfreemap/mnt/ofm:/mnt/ofm
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/"]
+      test: [ "CMD", "curl", "-f", "http://localhost/" ]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 120s
+  # ---------------------------------------------------------------------------
+  # Website - Astro static site
+  # ---------------------------------------------------------------------------
+  website:
+    image: ghcr.io/joenapatc/openfreemap/website:latest
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.website
+    container_name: ofm-website
+    restart: unless-stopped
+    # Expose the internal port to Coolify's reverse proxy
+    expose:
+      - "4321"
 
-  # # ---------------------------------------------------------------------------
-  # # Website - Astro static site
-  # # ---------------------------------------------------------------------------
-  # website:
-  #   build:
-  #     context: .
-  #     dockerfile: docker/Dockerfile.website
-  #   container_name: ofm-website
-  #   restart: unless-stopped
-  #   # Expose the internal port to Coolify's reverse proxy
-  #   expose:
-  #     - "4321"
-
-# volumes:
-#   ofm-data:
-#   nginx-data:
-#   mnt-ofm:
+volumes:
+  ofm-data:
+  nginx-data:
