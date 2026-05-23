@@ -1,275 +1,149 @@
 <a href="https://openfreemap.org/"><img src="https://openfreemap.org/logo.jpg" alt="logo" height="200" class="logo" /></a>
 
-# OpenFreeMap
+# OpenFreeMap (Containerized & Offline-Optimized)
 
-OpenFreeMap lets you display custom maps on your website and apps for free.
+[![Docker Support](https://img.shields.io/badge/Docker-Enabled-blue.svg?logo=docker&logoColor=white)](docs/docker_deployment.md)
+[![Coolify Support](https://img.shields.io/badge/Coolify-Supported-purple.svg)](docs/coolify_deployment.md)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.md)
 
-You can either [self-host](docs/self_hosting.md) or use our public instance. Everything is **open-source**, including the full production setup — there’s no 'open-core' model here. The map data comes from OpenStreetMap.
+Welcome to the customized fork of **OpenFreeMap** (`JoeNapatC/openfreemap`). This repository provides a production-grade, fully containerized, and local-development-friendly map stack optimized for custom hosting environments and offline map deployment.
 
-Using our **public instance** is completely free: there are no limits on the number of map views or requests. There’s no registration, no user database, no API keys, and no cookies. We aim to cover the running costs of our public instance through donations.
+Unlike the upstream repository, this version has been heavily refactored to prioritize **container orchestration, private hosting (like Coolify), and robust local/offline development options**.
 
-We also provide **weekly** full planet downloads both in Btrfs and MBTiles formats.
+---
 
-#### Quick introduction and how to guide: [https://openfreemap.org/](https://openfreemap.org/)
+## 🚀 Key Context & Enhancements
 
-## Goals of this project
+This fork adapts the high-performance tile architecture of OpenFreeMap to meet modern enterprise and local development requirements:
 
-The goal of this project is to provide free, production-quality vector-tile hosting using existing tools.
+1. **Complete Docker Orchestration**: Out-of-the-box `docker-compose` support for all services (HTTP Host Nginx server, optional Tile Generator, and Astro static Website).
+2. **Coolify-Ready Stack**: Includes [docker-compose.coolify.yml](docker-compose.coolify.yml) pre-configured to deploy behind Coolify’s native Traefik reverse proxy without host-level port conflicts.
+3. **Local & Offline Serving**: Supports serving map tiles directly over `localhost` or local network IP addresses, bypassing restrictions that previously required public domain routing.
+4. **Volume Masking Resilience**: Rewritten Docker architecture that isolates runtime code and Python virtual environments to `/opt/ofm` to prevent empty persistent volume mounts from masking the codebase.
+5. **Dynamic Configuration Generator**: Automatically compiles `config.json` at container startup from simple environment variables, supporting fallback features like `SELF_SIGNED_CERTS` and `SKIP_PLANET` mode.
+6. **Lean & Clean Monorepo**: Streamlined codebase with legacy external modules (e.g., the Cloudflare Worker debug proxy) fully removed.
 
-Currently these tools are: [OpenStreetMap](https://www.openstreetmap.org/copyright), [OpenMapTiles](https://github.com/openmaptiles/openmaptiles), [Planetiler](https://github.com/onthegomap/planetiler), [MapLibre](https://maplibre.org/), [Natural Earth](https://www.naturalearthdata.com/) and [Wikidata](https://www.wikidata.org/wiki/Wikidata:Main_Page).
+---
 
-Special thanks go to [Michael Barry](https://github.com/msbarry) for developing [Planetiler](https://github.com/onthegomap/planetiler). It made it possible to generate the tiles in 5 hours instead of 5 weeks.
+## 🛠️ Tech Stack & How It Works
 
-The scope of this repo is limited (see below). Once we figure out the technical details, ideally, there should be few commits here, while everything continues to work: the map tiles are automatically generated, servers are automatically updated and load balancing takes care of any downtime.
+This project serves **300+ million tiles** with sub-millisecond latency on standard hardware using a pure, file-system-level implementation.
 
-The [styles repo](https://github.com/hyperknot/openfreemap-styles), on the other hand, is continuously being developed.
+* **No Running Database**: Tiles are generated as standard MBTiles, then extracted into optimized **Btrfs partition images** consisting of millions of hard-linked files.
+* **Kernel-Level Performance**: Nginx serves tiles directly from mounted Btrfs images. This leverages the Linux kernel's high-performance file caching instead of database processes, yielding extreme throughput (tested to saturate 30 Gbit on loopback).
+* **Weekly Planet Updates**: Planet-wide tiles are updated weekly and available for public download in both Btrfs and MBTiles formats.
 
-Contributions are more than welcome!
+---
 
-## Status of this project
+## ⚡ Quick Start (Docker Compose)
 
-- The tile generation works
-- The web servers work
-- Weekly auto-updates work
-- Servers in our public instance are currently:
-  - 1 server running tile generation
-  - 2 servers running web hosting
-- Web servers are in Round-Robin DNS configuration with Let's Encrypt provided certificates.
-- Load-balancer script works. Currently in monitoring-only mode, as Round-Robin DNS handles downtime.
-- The public instance has been the production basemap service of [MapHub](https://maphub.net/) since June 2024.
+The easiest and recommended way to run this stack is using Docker Compose.
 
-## Sponsoring
+### Prerequisites
+* A Linux host with the **`btrfs` kernel module** loaded.
+* Docker 20.10+ and Docker Compose v2.0+.
 
-Please consider sponsoring our project on [GitHub Sponsors](https://github.com/sponsors/hyperknot).
-
-## Limitations of this project
-
-The only way this project can possibly work is to be super focused about what it is and what it isn't. OpenFreeMap has the following limitations by design:
-
-1. OpenFreeMap is not providing:
-
-   - search or geocoding
-   - route calculation, navigation or directions
-   - static image generation
-   - raster tile hosting
-   - satellite image hosting
-   - elevation lookup
-   - custom tile or dataset hosting
-
-2. OpenFreeMap can be deployed in two ways:
-
-   **SSH Deployment (original):** This repo includes a deploy script that sets up clean Ubuntu servers or virtual machines. It uses [Fabric](https://www.fabfile.org/) and runs commands over SSH. With a single command it can set up a production-ready server, both for tile hosting and generation.
-
-   **Docker Deployment:** Docker support is also available via `docker-compose`. See [Docker deployment docs](docs/docker_deployment.md) for details. Note that the HTTP host container requires `--privileged` mode for Btrfs image mounting.
-
-3. OpenFreeMap does not promise worry-free automatic updates for self-hosters. Only use the autoupdate version of http-host if you keep a close eye on this repo.
-
-## Self hosting
-
-See [self hosting docs](docs/self_hosting.md) for SSH-based deployment, or [Docker deployment docs](docs/docker_deployment.md) for Docker-based deployment.
-For hosting with **Coolify**, see the [Coolify deployment docs](docs/coolify_deployment.md) for the specialized configuration.
-
-### Docker Quick Start
+### Setup
 
 ```bash
-git clone https://github.com/hyperknot/openfreemap
+# 1. Clone the repository
+git clone https://github.com/JoeNapatC/openfreemap.git
 cd openfreemap
-cp .env.example .env
-# Edit .env — set DOMAIN_DIRECT, LETSENCRYPT_EMAIL, SKIP_PLANET=true for testing
-docker compose up -d
+
+# 2. Copy the environment template
+cp docker/.env.example .env
+
+# 3. Configure environment variables in .env
+# Set DOMAIN_DIRECT to your server domain, or localhost/IP for local testing.
+# Set SKIP_PLANET=true to start quickly using Monaco tile data only.
 ```
 
-See the full [Docker deployment guide](docs/docker_deployment.md) for details.
+### Run Services
 
-## What is the tech stack?
+```bash
+# Start the HTTP Host (serves map tiles)
+docker compose up -d http-host
 
-There is no tile server running; only Btrfs partition images with 300 million hard-linked files. This was my idea; I haven't read about anyone else doing this in production, but it works really well.
+# (Optional) Start the Astro Website
+docker compose up -d website
+```
 
-There is no cloud, just dedicated servers. The web server is nginx on Ubuntu.
+The HTTP Host container will start, download the tile data, mount the Btrfs images, and configure Nginx automatically. Follow the progress via:
+```bash
+docker compose logs -f http-host
+```
 
-## Btrfs images
+---
 
-Production-quality hosting of 300 million tiny files is hard. The average file size is just 450 byte. Dozens of tile servers have been written to tackle this problem, but they all have their limitations.
+## ☁️ Coolify Cloud Deployment
 
-The original idea of this project is to avoid using tile servers altogether. Instead, the tiles are directly served from Btrfs partition images + hard links using an optimised nginx config. I wrote [extract_mbtiles](modules/tile_gen/scripts/extract_mbtiles.py) and [shrink_btrfs](modules/tile_gen/scripts/shrink_btrfs.py) scripts for this very purpose.
+If you are hosting using **Coolify** (the self-hostable Heroku/Vercel alternative), deployment is fully automated out of the box:
 
-This replaces a running service with a pure, file-system-level implementation. Since the Linux kernel's file caching is among the highest-performing and most thoroughly tested codes ever written, it delivers serious performance.
+1. Create a new resource in Coolify pointing to this Git repository.
+2. Select **Docker Compose** as the build pack, and set the location to `./docker-compose.coolify.yml`.
+3. In the Coolify UI, set the **FQDN** for the `http-host` service (e.g., `https://maps.yourdomain.com`).
+4. Set environment variables: `DOMAIN_DIRECT=maps.yourdomain.com` and `SELF_SIGNED_CERTS=true` (since Coolify's Traefik handles external SSL termination).
+5. Click **Deploy**.
 
-I run some [benchmarks](docs/benchmark/README.md) on a Hetzner server, the aim was to saturate a gigabit connection. At the end, it was able to serve 30 Gbit on loopback interface, on cold nginx cache.
+For detailed, step-by-step instructions, see the [Coolify Deployment Guide](docs/coolify_deployment.md).
 
-## Code structure
+---
 
-The project has the following parts:
+## 📂 Repository Code Structure
 
-#### Docker deployment - docker/
+```
+├── docker/                      # Production-ready Dockerfiles & entrypoint scripts
+│   ├── Dockerfile.http-host     # Nginx & Btrfs mounting server
+│   ├── Dockerfile.tile-gen      # Planetiler & Java-based tile generator
+│   ├── Dockerfile.website       # Alpine-based Astro website builder
+│   └── docker-entrypoint-*.sh   # Bootstrappers for dynamic runtime configs
+├── docs/                        # Comprehensive guides
+│   ├── docker_deployment.md     # Detailed Docker guide (environment variables, volumes)
+│   ├── coolify_deployment.md    # Dedicated Coolify & Traefik guide
+│   ├── dev_setup.md             # Developer setup instructions
+│   └── self_hosting.md          # Original bare-metal SSH hosting guide
+├── modules/                     
+│   ├── http_host/               # Python logic for Btrfs sync, mounting, & Nginx config
+│   ├── tile_gen/                # Java/Planetiler pipeline scripts & Btrfs compression
+│   └── loadbalancer/            # DNS-based load balancer (Telegram alerting)
+├── ssh_lib/                     # SSH deployment assets (Fabric scripts)
+├── website/                     # Astro static site frontend
+├── docker-compose.yml           # Core Docker Compose orchestration file
+└── docker-compose.coolify.yml   # Coolify / Traefik optimized Compose file
+```
 
-Docker support for all major components. Includes Dockerfiles for HTTP host, tile generation, and the website, plus a `docker-compose.yml` for orchestration. See [Docker deployment docs](docs/docker_deployment.md).
+---
 
-#### SSH deploy server - ssh_lib and init-server.py
+## 🏗️ Generating Custom Tiles (Optional)
 
-The original deployment method. Sets up everything on a clean Ubuntu server. You run it locally and it sets up the server via SSH using [Fabric](https://www.fabfile.org/).
+Tile generation is completely optional, as preprocessed planet Btrfs files are generated weekly and downloaded automatically by the HTTP Host. If you need to generate custom tiles from raw OpenStreetMap `.osm.pbf` files:
 
-#### HTTP host - modules/http_host
+```bash
+# Start tile generation using the Docker Compose 'tile-gen' profile
+docker compose --profile tile-gen run --rm tile-gen make-tiles monaco
+```
+*Note: Generating full-planet tiles requires a high-performance machine (64GB+ RAM, 500GB+ high-speed NVMe SSD).*
 
-Inside `http_host`, all work is done by `http_host.py`.
+---
 
-It does the following:
+## 🎨 Map Styles
 
-- Downloading btrfs images
+The default styles for this project are maintained in the companion [openfreemap-styles repository](https://github.com/hyperknot/openfreemap-styles). You can customize fonts, icons, sprites, and JSON styles to match your apps.
 
-- Downloading assets
+---
 
-- Mounting downloaded btrfs images
+## ⚖️ Attribution & License
 
-- Fetches version files
+### Attribution
+Map attribution is required when displaying tiles. If you use standard libraries like MapLibre GL, it is managed automatically. For alternative clients or print/video media, add:
 
-- Running the sync cron task (called every minute with http-host-autoupdate)
+```html
+<a href="https://openfreemap.org" target="_blank">OpenFreeMap</a> 
+<a href="https://www.openmaptiles.org/" target="_blank">&copy; OpenMapTiles</a> 
+Data from <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>
+```
 
-You can run `./http_host.py --help` to see which options are available.
-
-#### tile generation - modules/tile_gen
-
-_note: Tile generation is 100% optional, as we are providing the processed full planet btrfs files for public download. You can download full planet images updated weekly, both in Btrfs and in MBTiles format._
-
-The `tile_gen` script downloads a full planet OSM extract and runs it through Planetiler.
-
-The created .mbtiles file is then extracted into a Btrfs partition image using the custom [extract_mbtiles](modules/tile_gen/scripts/extract_mbtiles.py) script. The partition is shrunk using the [shrink_btrfs](modules/tile_gen/scripts/shrink_btrfs.py) script.
-
-Finally, it's uploaded to a public Cloudflare R2 bucket using rclone.
-
-#### styles - [styles repo](https://github.com/hyperknot/openfreemap-styles)
-
-The default styles. I've already put countless hours into tweaking up some nice looking styles. Still, it'll take probably the most work in the long term future.
-
-Of course, you are welcome to use custom styles.
-
-#### load balancer script - modules/loadbalancer
-
-A Round Robin DNS based load balancer script for health checking and updating records. It pushes status messages to a Telegram bot.
-
-## FAQ
-
-### Full planet downloads
-
-Full planet runs are uploaded weekly. You can download them both in Btrfs and in MBTiles formats. The files have the following URL patterns:
-
-https://btrfs.openfreemap.com/areas/planet/{version}/tiles.btrfs.gz (and .mbtiles)
-
-Use the [index file](https://btrfs.openfreemap.com/files.txt) to find out about versions.
-
-_Note: MBTiles files are not required for this project. We provide them for your convenience, allowing you to use the processed planet tiles with any other tool of your choice._
-
-### Public buckets
-
-There are two public buckets:
-
-- https://assets.openfreemap.com - contains fonts, sprites, styles, versions. index: [dirs](https://assets.openfreemap.com/dirs.txt), [files](https://assets.openfreemap.com/files.txt)
-- https://btrfs.openfreemap.com - full planet runs. index: [dirs](https://btrfs.openfreemap.com/dirs.txt), [files](https://btrfs.openfreemap.com/files.txt)
-
-### Domains
-
-.org - not hosted through CloudFlare \
-.com - hosted through CloudFlare - serving the public buckets
-
-### What about PMTiles and using the Cloud?
-
-I would have loved to use PMTiles; they are a brilliant idea for serverless map hosting!
-
-Unfortunately, on Cloudflare, range requests in 90 GB files have terrible latency, and on AWS, the data transfer costs can be prohibitive.
-
-Of course, with normal usage, you might fall within cloud vendor's free tier, but the internet is full of stories about people receiving surprise bills from AWS, sometimes amounting to thousands of dollars. It only takes one bad crawling bot getting stuck in a loop on your website to trigger such a bill.
-
-In short, using cloud vendors would make it impossible for me to offer this service for free — this project simply wouldn't exist.
-
-## Contributing
-
-Contributors welcome!
-
-Smaller tasks:
-
-- [styles] Some of the POI icons are missing.
-
-Bigger tasks:
-
-- [styles] Split the styles to building blocks. For example, there should be a POI block, a label block, a road-style related block.
-
-Future:
-
-- Migrate to [Shortbread schema](https://shortbread-tiles.org/) and possibly [VersaTiles](https://versatiles.org/)
-
-#### Dev setup
-
-See [dev setup docs](docs/dev_setup.md).
-
-## Changelog
-
-##### v1.0
-
-Added Docker support with `docker-compose.yml`, Dockerfiles for HTTP host, tile generation, and website.
-Removed the debug proxy (Cloudflare Worker) module.
-Added `OFM_CONFIG_DIR` environment variable override for flexible config path in containers.
-
-##### v0.9
-
-Updated Planetiler version to latest
-Updated OpenJDK to 24 via Temurin repo
-
-
-
-##### v0.8
-
-Lot of self-hosting related fixes.
-
-Generating the domain inside the style TileJSON files dynamically (using nginx sub_filter).
-
-Added SELF_SIGNED_CERTS variable for cases when the certificates are self-managed or self-signed is OK.
-
-##### v0.7
-
-MBTiles are now uploaded, next to the btrfs image files.
-
-##### v0.6
-
-Load-balancer implemented with new config format. Implemented relaxed mode for checking while deployments are happening.
-
-##### v0.5
-
-Using a "done" file in the R2 buckets to mark the upload as finished. All scripts are checking for this file now.
-
-Monaco is generated daily, to avoid too frequent nginx reloads, which might be bad for the in-memory cache.
-
-##### v0.4
-
-Auto-update works!
-
-Monaco is generated hourly. Set-latest runs every minute.
-
-Planet is generated weekly, every Wednesday. Set-latest runs every Saturday.
-
-##### v0.3
-
-Lot of performance related problems with Cloudflare when using Round-Robin DNS. Works much better without any Cloudflare proxying, the browsers actually do a great job of client-side failover and selecting the best host.
-
-Load-balancing script running in check mode again.
-
-##### v0.2
-
-Load-balancing script is running in write mode, updating records when needed.
-
-##### v0.1
-
-Everything works. 1 server for tile gen, 2 servers for HTTP host. Load-balancing script is running in a read-only mode.
-
-## Attribution
-
-Attribution is required. If you are using MapLibre, they are automatically added, you have nothing to do.
-
-If you are using alternative clients, or if you are using this in printed media or video, you must add the following attribution:
-
-<a href="https://openfreemap.org" target="_blank">OpenFreeMap</a> <a href="https://www.openmaptiles.org/" target="_blank">&copy; OpenMapTiles</a> Data from <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>
-
-You do not need to display the OpenFreeMap part, but it is nice if you do.
-
-## License
-
-The license of this project is [MIT](https://www.tldrlegal.com/license/mit-license). Map data is from [OpenStreetMap](https://www.openstreetmap.org/copyright). The licenses for included projects are listed in [LICENSE.md](https://github.com/hyperknot/openfreemap/blob/main/LICENSE.md).
+### License
+* The code in this repository is licensed under the [MIT License](LICENSE.md).
+* Map data is from [OpenStreetMap](https://www.openstreetmap.org/copyright) (ODbL).
+* Third-party licenses for dependencies are documented in [LICENSE.md](LICENSE.md).

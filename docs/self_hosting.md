@@ -44,7 +44,7 @@ For example, make an A record for "maps.example.com" -> 185.199.110.153
 #### 2. Clone and prepare `config` folder
 
 ```
-git clone https://github.com/hyperknot/openfreemap
+git clone https://github.com/JoeNapatC/openfreemap
 ```
 
 In the config folder, copy `.env.sample` to `.env` and set the values.

@@ -16,7 +16,7 @@ This guide covers deploying OpenFreeMap using Docker and Docker Compose.
 ### 1. Clone and configure
 
 ```bash
-git clone https://github.com/hyperknot/openfreemap
+git clone https://github.com/JoeNapatC/openfreemap
 cd openfreemap
 ```
 
