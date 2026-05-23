@@ -12,7 +12,7 @@ We provide a specialized, pre-configured [docker-compose.coolify.yml](file:///Us
 
 ### Key differences in the Coolify configuration:
 1. **No Host Port Conflicts**: Exposes internal ports (`80` for the HTTP Host and `4321` for the Astro Website) via `expose` instead of mapping host ports. Traefik will dynamically proxy traffic to these containers.
-2. **Simplified SSL**: Traefik handles Let's Encrypt certificates, so the HTTP Host container runs purely as an HTTP server internally (`SELF_SIGNED_CERTS=false`), simplifying setup and eliminating standalone certbot container renewals.
+2. **Simplified SSL**: Traefik handles Let's Encrypt certificates at the host level, so the HTTP Host container runs internally using self-signed placeholder certificates (`SELF_SIGNED_CERTS=true`) to bypass container-level certbot registrations.
 3. **Privileged Access Preserved**: Keeps `privileged: true` configuration, allowing the HTTP Host to mount Btrfs images via loop devices (which is fully supported by Coolify).
 
 ---
@@ -49,6 +49,7 @@ In the Coolify dashboard under the **Environment Variables** tab for the stack, 
 | Key | Value | Description |
 |-----|-------|-------------|
 | `DOMAIN_DIRECT` | `maps.yourdomain.com` | The domain pointing to your maps server. |
+| `SELF_SIGNED_CERTS` | `true` | Must be set to `true` to skip container-level Certbot registration since Traefik handles SSL. |
 | `SKIP_PLANET` | `false` | Set to `true` if you only want to download and serve Monaco for initial testing. |
 | `TELEGRAM_TOKEN` | _(Optional)_ | Bot token for server alerts. |
 | `TELEGRAM_CHAT_ID` | _(Optional)_ | Chat ID for server alerts. |
