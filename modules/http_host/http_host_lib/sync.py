@@ -23,6 +23,9 @@ def full_sync(force=False):
 
     assets_changed = download_assets()
 
+    # Free obsolete local runs before attempting large btrfs downloads.
+    auto_clean_btrfs(keep_latest=False)
+
     btrfs_downloaded = False
 
     # download latest and deployed monaco
@@ -43,14 +46,14 @@ def full_sync(force=False):
         clean_up_mounts(config.mnt_dir)
 
 
-def auto_clean_btrfs():
+def auto_clean_btrfs(keep_latest=True):
     """
     Clean old btrfs runs
 
-    For each area we keep max two versions:
-    1. The newest one available locally
-    2. The one currently deployed, specified in /data/ofm/config/deployed_versions
-    3. If there is no deployed version, then we include the second newest one
+    For each area we keep:
+    1. The one currently deployed, specified in /data/ofm/config/deployed_versions
+    2. The newest one available locally, unless keep_latest is False
+    3. If there is no deployed version and keep_latest is True, the second newest one
     """
 
     print('Running auto clean btrfs')
@@ -63,10 +66,7 @@ def auto_clean_btrfs():
         local_versions = sorted([i.name for i in area_dir.iterdir()])
 
         versions_to_keep = set()
-
-        # add newest version
-        if local_versions:
-            versions_to_keep.add(local_versions[-1])
+        has_deployed_version = False
 
         # add deployed version
         try:
@@ -74,11 +74,25 @@ def auto_clean_btrfs():
             deployed_version = deployed_version_file.read_text().strip()
             if (config.runs_dir / area / deployed_version).exists():
                 versions_to_keep.add(deployed_version)
+                has_deployed_version = True
         except Exception:
             pass
 
-        # if still only one version, we include the second newest one
-        if len(versions_to_keep) == 1 and len(local_versions) >= 2:
+        # add newest version
+        if keep_latest and local_versions:
+            versions_to_keep.add(local_versions[-1])
+
+        # keep one local fallback rather than deleting all tile data
+        if not versions_to_keep and local_versions:
+            versions_to_keep.add(local_versions[-1])
+
+        # if there is no deployed version, include the second newest one
+        if (
+            keep_latest
+            and not has_deployed_version
+            and len(versions_to_keep) == 1
+            and len(local_versions) >= 2
+        ):
             versions_to_keep.add(local_versions[-2])
 
         print(f'  keeping runs for {area}: {sorted(versions_to_keep)}')

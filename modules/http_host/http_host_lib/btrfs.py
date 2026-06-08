@@ -64,31 +64,33 @@ def download_and_extract_btrfs(area: str, version: str) -> bool:
     shutil.rmtree(temp_dir, ignore_errors=True)
     temp_dir.mkdir(parents=True)
 
-    url = f'https://btrfs.openfreemap.com/areas/{area}/{version}/tiles.btrfs.gz'
+    try:
+        url = f'https://btrfs.openfreemap.com/areas/{area}/{version}/tiles.btrfs.gz'
 
-    # check disk space
-    disk_free = shutil.disk_usage(temp_dir).free
-    file_size = get_remote_file_size(url)
-    if not file_size:
-        print(f'  cannot get remote file size for {url}')
-        return False
+        # check disk space
+        disk_free = shutil.disk_usage(temp_dir).free
+        file_size = get_remote_file_size(url)
+        if not file_size:
+            print(f'  cannot get remote file size for {url}')
+            return False
 
-    needed_space = file_size * 3
-    if disk_free < needed_space:
-        print(f'  not enough disk space. Needed: {needed_space}, free space: {disk_free}')
-        return False
+        needed_space = file_size * 3
+        if disk_free < needed_space:
+            print(f'  not enough disk space. Needed: {needed_space}, free space: {disk_free}')
+            return False
 
-    target_file = temp_dir / 'tiles.btrfs.gz'
-    download_file_aria2(url, target_file)
+        target_file = temp_dir / 'tiles.btrfs.gz'
+        download_file_aria2(url, target_file)
 
-    print('  uncompressing...')
-    subprocess.run(['unpigz', temp_dir / 'tiles.btrfs.gz'], check=True)
-    btrfs_src = temp_dir / 'tiles.btrfs'
+        print('  uncompressing...')
+        subprocess.run(['unpigz', temp_dir / 'tiles.btrfs.gz'], check=True)
+        btrfs_src = temp_dir / 'tiles.btrfs'
 
-    shutil.rmtree(version_dir, ignore_errors=True)
-    version_dir.mkdir(parents=True)
+        shutil.rmtree(version_dir, ignore_errors=True)
+        version_dir.mkdir(parents=True)
 
-    btrfs_src.rename(btrfs_file)
+        btrfs_src.rename(btrfs_file)
 
-    shutil.rmtree(temp_dir)
-    return True
+        return True
+    finally:
+        shutil.rmtree(temp_dir, ignore_errors=True)
